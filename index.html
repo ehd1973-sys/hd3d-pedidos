@@ -490,6 +490,8 @@ async function aoLogar(session){
     $('#emailSenha').textContent=novo.email;mostrar('telaSenha');return;
   }
   if(usuario&&usuario.id===novo.id)return;
+  const chk=await sb.auth.getUser();
+  if(chk.error&&/session|jwt|token/i.test(chk.error.message)){await sessaoExpirada();return;}
   usuario=novo;
   const r=await sb.from('perfis').select('*').eq('id',novo.id).maybeSingle();
   perfil=r.data;
@@ -918,9 +920,14 @@ async function importar(){
 
 /* ---------- Painel de controle (master) ---------- */
 const PERMS=[['editar','Editar'],['excluir','Excluir'],['despesas','Despesas'],['ver_financeiro','Financeiro']];
+async function sessaoExpirada(){
+  try{await sb.auth.signOut({scope:'local'});}catch{}
+  usuario=null;perfil=null;mostrar('telaLogin');
+  $('#erroLogin').textContent='Sua sessão expirou. Entre novamente.';
+}
 async function chamarUsuarios(corpo){
   const r=await sb.functions.invoke('usuarios',{body:{...corpo,redirectTo:SITE}});
-  if(r.error){let m=r.error.message;try{const j=await r.error.context.json();if(j?.erro)m=j.erro;}catch{}throw new Error(m);}
+  if(r.error){let m=r.error.message;try{const j=await r.error.context.json();if(j?.erro)m=j.erro;}catch{}if(/não autenticado/.test(m)){await sessaoExpirada();throw new Error('sessão expirada, entre novamente');}throw new Error(m);}
   if(r.data?.erro)throw new Error(r.data.erro);
   return r.data;
 }
