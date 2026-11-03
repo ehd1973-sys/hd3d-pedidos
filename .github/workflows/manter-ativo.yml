@@ -1,0 +1,47 @@
+# Acessa o banco do Supabase a cada 3 dias para ele não pausar (plano gratuito pausa após 7 dias sem uso).
+# Se o acesso falhar, o GitHub envia um e-mail avisando.
+name: Manter banco ativo
+
+on:
+  schedule:
+    - cron: '17 12 */3 * *'   # a cada 3 dias, 09:17 (horário de Brasília)
+  workflow_dispatch:          # permite rodar manualmente pela aba Actions
+
+permissions:
+  contents: write
+
+jobs:
+  manter-ativo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Acessar o banco de dados
+        env:
+          URL: https://gfstmyfxkqivdkwcgqut.supabase.co
+          KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmc3RteWZ4a3FpdmRrd2NncXV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2ODcyNDUsImV4cCI6MjEwODI2MzI0NX0.Cv91etqD0O0Y5tdH6KuQgGJd7bEr8lfFmGJTxkYM3DU
+        run: |
+          for tentativa in 1 2 3; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/pedidos?select=id&limit=1" \
+                   -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+            echo "Tentativa $tentativa: resposta $code"
+            if [ "$code" = "200" ]; then echo "Banco ativo."; exit 0; fi
+            sleep 30
+          done
+          echo "::error::O banco não respondeu. Ele pode ter sido pausado: entre em supabase.com e clique em Resume project."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - name: Manter o agendamento do GitHub ativo
+        run: |
+          ultimo=$(git log -1 --format=%ct)
+          agora=$(date +%s)
+          dias=$(( (agora - ultimo) / 86400 ))
+          echo "Dias desde a última alteração do repositório: $dias"
+          if [ "$dias" -ge 45 ]; then
+            date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/ultimo-acesso.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .github/ultimo-acesso.txt
+            git commit -m "Mantém o agendamento ativo"
+            git push
+          fi
