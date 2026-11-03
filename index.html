@@ -95,6 +95,8 @@ header .logo{height:46px;width:auto;color:#fff}
 #toast.bad{background:var(--bad)}
 .sem-fin .fin,.sem-editar .podeEditar,.sem-master .soMaster,.sem-despesas .soDespesas{display:none!important}
 .perms{display:flex;gap:16px;flex-wrap:wrap}
+.pbar{height:6px;background:#e7ebf2;border-radius:4px;overflow:hidden;margin-top:3px;min-width:70px}.pbar i{display:block;height:100%;background:var(--ok)}
+.pbig{height:12px}.prodLinha{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--bd);padding:6px 0;font-size:13px}
 label.chk{display:flex;align-items:center;gap:6px;color:var(--tx);font-size:14px}
 label.chk input{width:auto;margin:0}
 .uTbl td{vertical-align:middle}.uTbl input[type=checkbox]{width:18px;height:18px}
@@ -204,7 +206,7 @@ label.chk input{width:auto;margin:0}
     <label style="display:flex;gap:5px;align-items:center;color:var(--tx);font-size:14px"><input type="checkbox" id="fAtraso" onchange="renderLista()" style="width:auto">Só atrasados</label>
   </div>
   <table class="tbl resp">
-    <thead><tr><th></th><th>Nº</th><th>Data</th><th>Cliente</th><th>Produto</th><th class="num">Qtde</th><th class="num">Total</th><th class="num fin">Lucro</th><th>Pagamento</th><th>Status</th><th>Prazo</th><th>Ações</th></tr></thead>
+    <thead><tr><th></th><th>Nº</th><th>Data</th><th>Cliente</th><th>Produto</th><th class="num">Qtde</th><th class="num">Total</th><th class="num fin">Lucro</th><th>Pagamento</th><th>Status</th><th>Produção</th><th>Prazo</th><th>Ações</th></tr></thead>
     <tbody id="lista"></tbody>
   </table>
 </section>
@@ -262,6 +264,7 @@ label.chk input{width:auto;margin:0}
         <label class="chk"><input type="checkbox" name="excluir"> Excluir pedidos</label>
         <label class="chk"><input type="checkbox" name="despesas"> Despesas</label>
         <label class="chk"><input type="checkbox" name="ver_financeiro"> Ver financeiro</label>
+        <label class="chk"><input type="checkbox" name="producao"> Lançar produção</label>
       </div>
       <button class="btn ok" id="btnConvite">Enviar convite por e-mail</button>
       <span class="muted" style="margin-left:8px">A pessoa recebe um link para criar a própria senha.</span>
@@ -279,6 +282,7 @@ label.chk input{width:auto;margin:0}
       <li><b>Excluir pedidos</b>: apagar pedidos. Sem ela: pode apenas marcar como Cancelado (se puder editar).</li>
       <li><b>Despesas</b>: aba de compras de suprimentos e manutenção.</li>
       <li><b>Ver financeiro</b>: custo, lucro, margem e o Resumo mensal.</li>
+      <li><b>Produção</b>: lançar peças e logos produzidas (e desfazer lançamentos). Todos os usuários veem o andamento.</li>
     </ul>
   </div>
 </section>
@@ -322,6 +326,7 @@ label.chk input{width:auto;margin:0}
         <label>Prazo de entrega<input type="date" name="prazo"></label>
         <label>Status<select name="status" id="selStatus"></select></label>
         <label class="req">Produto<input name="produto" required placeholder="Ex.: Chaveiro personalizado"></label>
+        <label class="chk" style="grid-column:1/-1"><input type="checkbox" name="logoSeparada"> Logo impressa separada (produção controla peças e logos — 1 logo por peça)</label>
       </div>
     </fieldset>
     <fieldset><legend>Dados técnicos (por unidade)</legend>
@@ -361,6 +366,28 @@ label.chk input{width:auto;margin:0}
     <button type="submit" class="btn ok" id="btnSalvar">Salvar pedido</button>
   </div>
 </form>
+</dialog>
+
+<dialog id="dlgProd" style="width:min(560px,96vw)">
+  <form onsubmit="lancarProd(event)">
+    <div class="dhead"><h2 id="prodTitulo">Produção</h2><button type="button" class="btn lt sm" onclick="dlgProd.close()">✕</button></div>
+    <div class="dbody">
+      <div id="prodResumo"></div>
+      <div id="prodLancar" style="margin-top:14px">
+        <div class="g g2">
+          <label>Peças produzidas agora<input type="number" min="0" step="1" name="pecas" inputmode="numeric"></label>
+          <label id="prodLogoLbl">Logos produzidas agora<input type="number" min="0" step="1" name="logos" inputmode="numeric"></label>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button type="button" class="btn lt sm" onclick="prodTudo()">Preencher com tudo que falta</button>
+          <button class="btn ok" id="btnProd">Lançar produção</button>
+        </div>
+        <div class="erro" id="erroProd" style="text-align:left"></div>
+      </div>
+      <h3 style="margin:18px 0 6px;font-size:14px;color:var(--pri)">Lançamentos</h3>
+      <div id="prodLista"></div>
+    </div>
+  </form>
 </dialog>
 
 <dialog id="dlgSenha" style="width:min(420px,94vw)">
@@ -427,6 +454,10 @@ let modoSenha=['invite','recovery'].includes(HASH.get('type'))?HASH.get('type'):
 const erroLink=HASH.get('error_description');
 const SITE=location.origin+location.pathname;
 const P=k=>!!perfil&&perfil.ativo&&(perfil.master||!!perfil[k]);
+let PROD=new Map();
+function andamento(p){const r=PROD.get(p.id)||{pecas:0,logos:0,itens:[]};const q=Math.floor(n(p.qtde));const sep=!!p.logoSeparada;
+  return {...r,q,sep,faltaP:Math.max(0,q-r.pecas),faltaL:sep?Math.max(0,q-r.logos):0,pct:q?Math.min(100,Math.round(((r.pecas+(sep?r.logos:0))/(q*(sep?2:1)))*100)):0};}
+function barra(pc){return `<div class="pbar"><i style="width:${pc}%"></i></div>`;}
 function lerConfig(){
   let u=CONFIG.url,k=CONFIG.chave;
   if(!u||!k){try{const s=JSON.parse(localStorage.getItem('hd3d_cfg')||'{}');u=u||s.url;k=k||s.chave;}catch{}}
@@ -506,13 +537,15 @@ async function atualizar(){
   carregando(true);
   try{
     const verDesp=P('despesas')||P('ver_financeiro'),fin=P('ver_financeiro');
-    const [p,d,c]=await Promise.all([
+    const [p,d,c,pr]=await Promise.all([
       sb.from('pedidos').select('id,numero,dados').order('numero',{ascending:false}),
       verDesp?sb.from('despesas').select('id,dados'):Promise.resolve({data:[]}),
-      fin?sb.from('pedido_custos').select('pedido_id,custo_unit'):Promise.resolve({data:[]})]);
+      fin?sb.from('pedido_custos').select('pedido_id,custo_unit'):Promise.resolve({data:[]}),
+      sb.from('producao').select('id,pedido_id,pecas,logos,por,criado_em').order('criado_em')]);
     const custos=new Map(ok(c).map(x=>[x.pedido_id,+x.custo_unit]));
     pedidos=ok(p).map(r=>{const o={...r.dados,id:r.id,numero:r.numero,historico:r.dados.historico||[]};delete o.custoUnit;if(fin)o.custoUnit=custos.get(r.id)||0;return o;});
     despesas=ok(d).map(r=>({...r.dados,id:r.id}));
+    PROD=new Map();(pr.error?[]:pr.data).forEach(x=>{const o=PROD.get(x.pedido_id)||{pecas:0,logos:0,itens:[]};o.pecas+=x.pecas;o.logos+=x.logos;o.itens.push(x);PROD.set(x.pedido_id,o);});
     if($('#v-painel').classList.contains('on'))renderPainel();
     await gerarUrls();
     render();
@@ -580,11 +613,13 @@ function renderKpis(){
   const atr=pedidos.filter(atrasado).length;
   const prontos=pedidos.filter(p=>p.status==='Pronto').length;
   const aRec=ativos.reduce((a,p)=>a+Math.max(0,calc(p).saldo),0);
+  let fp=0,fl=0;pedidos.filter(p=>!['Cancelado','Entregue','Orçamento'].includes(p.status)).forEach(p=>{const x=andamento(p);fp+=x.faltaP;fl+=x.faltaL;});
   $('#kpis').innerHTML=`
    <div class="kpi"><small>Em produção</small><b>${prod}</b></div>
    <div class="kpi ${atr?'bad':''}"><small>Atrasados</small><b>${atr}</b></div>
    <div class="kpi ok"><small>Prontos p/ entrega</small><b>${prontos}</b></div>
-   <div class="kpi"><small>A receber (geral)</small><b>${brl(aRec)}</b></div>`;
+   <div class="kpi"><small>A receber (geral)</small><b>${brl(aRec)}</b></div>
+   <div class="kpi"><small>Falta produzir</small><b>${fp} peça${fp===1?'':'s'}${fl?` · ${fl} logo${fl===1?'':'s'}`:''}</b></div>`;
 }
 function renderLista(){
   const q=$('#busca').value.toLowerCase(),fs=$('#fStatus').value,fp=$('#fPag').value,so=$('#fAtraso').checked;
@@ -610,13 +645,15 @@ function renderLista(){
      <td data-l="Lucro" class="num fin ${c.lucro<0?'lucroNeg':''}"><span>${brl(c.lucro)}</span></td>
      <td data-l="Pagamento"><span>${tagPg(c.pg)}${c.saldo>0.004&&c.pg!=='Pendente'?`<br><span class="muted">falta ${brl(c.saldo)}</span>`:''}</span></td>
      <td data-l="Status"><span><select class="st" onchange="mudarStatus('${p.id}',this.value)">${STATUS.map(s=>`<option ${s===p.status?'selected':''}>${s}</option>`).join('')}</select></span></td>
+     <td data-l="Produção"><span>${(()=>{const x=andamento(p);return `<span style="font-size:12px;white-space:nowrap">${x.pecas}/${x.q} pç${x.sep?` · ${x.logos}/${x.q} logo`:''}</span>${barra(x.pct)}`;})()}</span></td>
      <td data-l="Prazo"><span>${fmtData(p.prazo)}${atr?'<br><span class="atrasoTxt">ATRASADO</span>':''}</span></td>
      <td data-l="Ações" class="acoes"><span>
        <button class="btn sm" onclick="abrir('${p.id}')" title="${P('editar')?'Editar':'Ver detalhes'}">${P('editar')?'✎':'👁'}</button>
+       <button class="btn sm" style="background:var(--ac)" onclick="abrirProd('${p.id}')" title="Produção">🏭</button>
        <button class="btn sm ok" onclick="whats('${p.id}')" title="WhatsApp">WA</button>
        <button class="btn sm lt" onclick="os('${p.id}')" title="Ordem de serviço">OS</button>
        ${P('excluir')?`<button class="btn sm bad" onclick="excluir('${p.id}')" title="Excluir">🗑</button>`:''}
-     </span></span></td></tr>`;}).join(''):`<tr><td colspan="12" class="muted" style="text-align:center;padding:30px;display:table-cell">Nenhum pedido encontrado.</td></tr>`;
+     </span></span></td></tr>`;}).join(''):`<tr><td colspan="13" class="muted" style="text-align:center;padding:30px;display:table-cell">Nenhum pedido encontrado.</td></tr>`;
 }
 function render(){renderKpis();renderLista();renderDespesas();if($('#v-resumo').classList.contains('on')&&P('ver_financeiro'))renderResumo();}
 
@@ -651,7 +688,7 @@ function abrir(id){
   cur=orig?structuredClone(orig):{status:'Orçamento',dataPedido:hoje(),qtde:1,historico:[]};
   cur._pend={};
   $('#dTitulo').textContent=orig?`Pedido ${numPed(orig.numero)}`:'Novo pedido';
-  for(const el of f.elements){if(el.name&&el.name!=='nota'&&cur[el.name]!==undefined)el.value=cur[el.name];}
+  for(const el of f.elements){if(!el.name||el.name==='nota')continue;if(el.type==='checkbox')el.checked=!!cur[el.name];else if(cur[el.name]!==undefined)el.value=cur[el.name];}
   ARQS.forEach(prevArq);
   const leitura=!P('editar');
   f.classList.toggle('leitura',leitura);
@@ -700,7 +737,7 @@ async function salvar(e){
   e.preventDefault();
   const f=$('#form'),b=$('#btnSalvar');
   const p=cur,novo=!orig;
-  for(const el of f.elements){if(!el.name||el.name==='nota')continue;p[el.name]=NUM.includes(el.name)?n(el.value):el.value.trim();}
+  for(const el of f.elements){if(!el.name||el.name==='nota')continue;p[el.name]=el.type==='checkbox'?el.checked:NUM.includes(el.name)?n(el.value):el.value.trim();}
   const nota=f.elements.nota.value.trim();
   if(novo){p.id=uuid();p.criadoEm=Date.now();p.criadoPor=usuario.email;}
   b.disabled=true;b.textContent='Enviando...';
@@ -918,8 +955,41 @@ async function importar(){
   b.disabled=false;
 }
 
+/* ---------- Produção ---------- */
+let prodPed=null;
+function abrirProd(id){
+  prodPed=pedidos.find(x=>x.id===id);const d=$('#dlgProd');d.querySelector('form').reset();$('#erroProd').textContent='';
+  renderProd();d.showModal();
+}
+function renderProd(){
+  const p=prodPed,x=andamento(p),pode=P('producao')&&p.status!=='Cancelado';
+  $('#prodTitulo').textContent=`Produção · ${numPed(p.numero)} · ${p.cliente}`;
+  const linha=(t,f,q)=>`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between"><b>${t}</b><span>${f} de ${q} · <b>${q-f>0?`faltam ${q-f}`:'completo ✔'}</b></span></div><div class="pbar pbig"><i style="width:${q?Math.min(100,f/q*100):0}%"></i></div></div>`;
+  $('#prodResumo').innerHTML=`<p class="muted" style="margin:0 0 6px">${esc(p.produto)} · status: <b>${esc(p.status)}</b></p>`+linha('Peças',x.pecas,x.q)+(x.sep?linha('Logos',x.logos,x.q):'<p class="muted" style="font-size:12px">Sem logo impressa separada.</p>');
+  $('#prodLancar').style.display=pode?'':'none';
+  $('#prodLogoLbl').style.display=x.sep?'':'none';
+  $('#prodLista').innerHTML=x.itens.length?x.itens.slice().reverse().map(i=>`<div class="prodLinha"><span>${new Date(i.criado_em).toLocaleString('pt-BR')} · <b>+${i.pecas} pç</b>${x.sep?` · <b>+${i.logos} logo</b>`:''}<br><span class="muted">${esc(i.por)}</span></span>${pode?`<button type="button" class="btn sm lt" onclick="desfazerProd('${i.id}')">Desfazer</button>`:''}</div>`).join(''):'<p class="muted">Nenhum lançamento ainda.</p>';
+}
+function prodTudo(){const x=andamento(prodPed),f=$('#dlgProd form');f.pecas.value=x.faltaP||'';if(x.sep)f.logos.value=x.faltaL||'';}
+async function lancarProd(e){
+  e.preventDefault();const f=e.target,b=$('#btnProd');$('#erroProd').textContent='';
+  const pc=Math.floor(n(f.pecas.value)),lg=andamento(prodPed).sep?Math.floor(n(f.logos.value)):0;
+  if(pc+lg<=0){$('#erroProd').textContent='Informe quantas peças ou logos foram produzidas.';return;}
+  b.disabled=true;
+  try{const r=ok(await sb.rpc('lancar_producao',{p_pedido:prodPed.id,p_pecas:pc,p_logos:lg}));
+    toast(`Produção lançada · peças ${r.pecas}/${andamento(prodPed).q}`+(r.status!==prodPed.status?` · status: ${r.status}`:''));
+    f.reset();await atualizar();prodPed=pedidos.find(x=>x.id===prodPed.id);renderProd();}
+  catch(err){$('#erroProd').textContent=traduz(err);}
+  b.disabled=false;
+}
+async function desfazerProd(id){
+  if(!confirm('Desfazer este lançamento de produção?'))return;
+  try{ok(await sb.rpc('desfazer_producao',{p_id:id}));toast('Lançamento desfeito');await atualizar();prodPed=pedidos.find(x=>x.id===prodPed.id);renderProd();}
+  catch(err){toast('Não foi possível desfazer: '+traduz(err),true);}
+}
+
 /* ---------- Painel de controle (master) ---------- */
-const PERMS=[['editar','Editar'],['excluir','Excluir'],['despesas','Despesas'],['ver_financeiro','Financeiro']];
+const PERMS=[['editar','Editar'],['excluir','Excluir'],['producao','Produção'],['despesas','Despesas'],['ver_financeiro','Financeiro']];
 async function sessaoExpirada(){
   try{await sb.auth.signOut({scope:'local'});}catch{}
   usuario=null;perfil=null;mostrar('telaLogin');
@@ -960,7 +1030,8 @@ async function convidar(e){
   e.preventDefault();const f=e.target,b=$('#btnConvite');
   const permissoes={};PERMS.forEach(([k])=>permissoes[k]=f.elements[k].checked);
   b.disabled=true;b.textContent='Enviando...';
-  try{await chamarUsuarios({acao:'convidar',nome:f.nome.value.trim(),email:f.email.value.trim(),permissoes});toast('Convite enviado para '+f.email.value.trim());f.reset();renderPainel();}
+  try{const rc=await chamarUsuarios({acao:'convidar',nome:f.nome.value.trim(),email:f.email.value.trim(),permissoes});
+    if(rc?.id&&permissoes.producao)await sb.from('perfis').update({producao:true}).eq('id',rc.id);toast('Convite enviado para '+f.email.value.trim());f.reset();renderPainel();}
   catch(err){toast('Não foi possível convidar: '+err.message,true);}
   b.disabled=false;b.textContent='Enviar convite por e-mail';
 }
