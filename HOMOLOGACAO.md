@@ -1,4 +1,4 @@
-# HD3D — Resultado da homologação parcial
+# HD3D — Resultados da homologação da Fase 1
 
 Data: 05/11/2026. Projeto separado: HD3D Homologacao (bpvlryctabjhfiipckhj). Produção gfstmyfxkqivdkwcgqut não recebeu migrações nem publicação.
 
@@ -17,6 +17,9 @@ Data: 05/11/2026. Projeto separado: HD3D Homologacao (bpvlryctabjhfiipckhj). Pro
 - Confirmacão nativa foi substituída por diálogo dentro da aplicação após falha do controle automático do navegador.
 - Pedido continuou Aprovado e produção 0/10, sem duplicar peças/logos.
 - Inspeção visual em 390 × 844: lista responsiva legível. Duração e estimativa de energia agrupadas para leitura em celular.
+- Regras de leitor, operador, financeiro e inativo verificadas no Supabase com papel authenticated e claims do usuário de teste, em uma transação revertida. Leitor não grava nem recebe custos; operador grava/encerra/estorna sem cadastrar impressora ou receber custos; financeiro recebe custos e não estorna; inativo não recebe dados FDM. Perfil master original confirmado preservado no final. Isso testa RLS no servidor, sem equivaler a logins independentes de cada perfil.
+- Duas conexões PostgreSQL distintas finalizaram simultaneamente a mesma impressão de 3 g. A primeira manteve o bloqueio por 20 segundos; a segunda aguardou. Resultado: apenas uma saída, 3 g, nenhuma alteração na produção de peças.
+- Duas conexões distintas estornaram simultaneamente essa impressão. Resultado final: uma saída, um estorno, saldo líquido 0 g; três registros fictícios de impressão preservados em homologação.
 
 ## Testes locais
 
@@ -28,10 +31,9 @@ node homologacao-test.mjs: base nova, recusa de reinstalação, RLS das dez tabe
 
 ## Pendências antes de produção
 
-- Testar permissões com sessões reais distintas de leitor, operador e financeiro; localmente essas regras passaram em PostgreSQL, mas ainda não houve múltiplos logins reais.
-- Testar concorrência real de duas sessões ao encerrar/estornar.
+- Cobertura adicional opcional: telas e sessão HTTP de cada perfil com logins independentes. As regras de servidor já passaram no Supabase, e o fluxo de interface foi validado com master.
 - Exportação integral do ambiente original e recuperação integral de Auth, funções de borda, gatilhos, grants e configurações continuam pendentes; a cópia das cinco tabelas e seis anexos foi validada separadamente.
-- Fazer revisão final e aprovar implantação. Esta homologação parcial não autoriza publicação.
+- Fazer revisão final e aprovar implantação. Estes testes não autorizam publicação.
 
 ## Limitações de escopo
 
