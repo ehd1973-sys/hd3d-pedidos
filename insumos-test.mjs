@@ -12,8 +12,9 @@ await db.exec('GRANT USAGE ON SCHEMA public,auth TO authenticated; GRANT SELECT 
 const uid=fixture.perfis[0].id,pedido=fixture.pedidos[0].id;
 await db.query("SELECT set_config('request.jwt.claim.sub',$1,false)",[uid]);await db.exec('SET ROLE authenticated');
 const rpc=async(sql,args=[])=>db.query(sql,args),error=async(sql,args=[])=>assert.rejects(rpc(sql,args));
-const arg=(await rpc("SELECT id FROM insumos WHERE codigo='ARGOLA'")).rows[0].id;
-const kit=(await rpc("SELECT id FROM insumos WHERE codigo='CONJUNTO-CHAVEIRO'")).rows[0].id;
+assert.equal((await rpc("SELECT count(*)::int n FROM insumos WHERE categoria<>'filamento'")).rows[0].n,0,'Sem produtos obrigatórios pré-cadastrados');
+const arg=(await rpc("SELECT ins_cadastrar('ARGOLA','Argola','componente','un') id")).rows[0].id;
+const kit=(await rpc("SELECT ins_cadastrar('CONJUNTO-CHAVEIRO','Conjunto','conjunto','un') id")).rows[0].id;
 const op=()=>crypto.randomUUID();
 await error("SELECT ins_consumir($1,$2,$3,'teste')",[op(),pedido,JSON.stringify([{insumo_id:arg,quantidade:1}])]);
 const abrir=op();await rpc("SELECT ins_estoque($1,$2,'contagem',100,0.1,'Contagem teste')",[abrir,arg]);await rpc("SELECT ins_estoque($1,$2,'contagem',100,0.1,'Contagem teste')",[abrir,arg]);
@@ -44,6 +45,17 @@ await rpc("SELECT fdm_encerrar($1,'concluida')",[imp.id]);await rpc("SELECT fdm_
 assert.equal(Number((await rpc('SELECT saldo FROM insumos WHERE id=$1',[fil])).rows[0].saldo),988);
 await rpc('SELECT fdm_estornar($1)',[imp.id]);await rpc('SELECT fdm_estornar($1)',[imp.id]);
 assert.equal(Number((await rpc('SELECT saldo FROM insumos WHERE id=$1',[fil])).rows[0].saldo),1000);
+const cola=(await rpc("SELECT ins_cadastrar('COLA','Cola branca','outro','ml') id")).rows[0].id;
+await rpc("SELECT ins_editar($1,'COLA-500','Cola branca 500 ml')",[cola]);
+await rpc('SELECT ins_retirar($1,true)',[cola]);await rpc('SELECT ins_retirar($1,true)',[cola]);
+assert.equal((await rpc('SELECT ativo FROM insumos WHERE id=$1',[cola])).rows[0].ativo,false);
+await error("SELECT ins_consumir($1,$2,$3,'Retirado')",[op(),pedido,JSON.stringify([{insumo_id:cola,quantidade:1}])]);
+await rpc('SELECT ins_retirar($1,false)',[cola]);
+await rpc("SELECT ins_estoque($1,$2,'contagem',500,0.02,'Cola teste')",[op(),cola]);
+await error('SELECT ins_retirar($1,true)',[cola]);
+await rpc("SELECT ins_consumir($1,$2,$3,'Produção sem composição prévia')",[op(),pedido,JSON.stringify([{insumo_id:cola,quantidade:25}])]);
+assert.equal(Number((await rpc('SELECT saldo FROM insumos WHERE id=$1',[cola])).rows[0].saldo),475);
+await error("SELECT ins_editar($1,'ARGOLA','Código repetido')",[cola]);
 const snap=(await rpc('SELECT fdm_exportar_snapshot() d')).rows[0].d;assert.equal(snap.versao,2);assert.ok(snap.insumo_movimentos.length>0);
 const estrutura=read('insumos.sql').replace(/-- Saldo existente[\s\S]*?(?=CREATE FUNCTION public\._ins_sync_material)/,'');
 fs.writeFileSync('insumos-estrutura-recuperacao.sql',estrutura);
@@ -65,7 +77,7 @@ await db.exec('RESET ROLE');await db.query('UPDATE perfis SET master=false,produ
 assert.equal((await rpc('SELECT * FROM insumo_valores')).rows.length,0);
 assert.equal((await rpc('SELECT * FROM insumo_movimento_valores')).rows.length,0);
 const painel=(await rpc('SELECT ins_painel() d')).rows[0].d;assert.equal(painel.custos.length,0);assert.ok(!('custo_medio' in painel.insumos[0]));
-await error('SELECT ins_configurar($1,0,true,0.1)',[arg]);await error('SELECT fdm_exportar_snapshot()');
+await error('SELECT ins_retirar($1,true)',[cola]);await error("SELECT ins_editar($1,'X','Tentativa')",[cola]);await error('SELECT ins_configurar($1,0,true,0.1)',[arg]);await error('SELECT fdm_exportar_snapshot()');
 await db.exec('RESET ROLE');await db.query('UPDATE perfis SET ativo=false WHERE id=$1',[uid]);await db.exec('SET ROLE authenticated');await error('SELECT ins_painel()');
 await db.exec('RESET ROLE');assert.equal((await rpc('SELECT count(*)::int n FROM producao')).rows[0].n,fixture.producao.length);
 console.log('Insumos: avulsos/conjuntos, custo médio, histórico congelado, atomicidade, saldo insuficiente, idempotência, estorno, planejamento, custo no pedido, integração FDM e permissões: OK.');

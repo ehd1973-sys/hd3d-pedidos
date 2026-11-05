@@ -2,7 +2,7 @@
 
 Incremento validado em homologação; aguarda implantação no sistema em uso. Permite argolas e correntinhas avulsas, conjuntos prontos, filamentos, embalagens e outros insumos. Cada item tem unidade, contagem, compras, custo médio e histórico de consumo/estorno. A composição por peça calcula necessidade e custo previsto do pedido; os consumos preservam o custo da época.
 
-Operação: [MANUAL-INSUMOS.md](MANUAL-INSUMOS.md). Instalação e validação: [IMPLANTACAO-INSUMOS.md](IMPLANTACAO-INSUMOS.md). Aplicar `insumos.sql` uma vez sobre a Fase 1; publicar `index.html`, `fdm.js` e `insumos.js` juntos. Os cadastros iniciais de argola, correntinha e conjunto não recebem saldo nem preço presumidos.
+Operação: [MANUAL-INSUMOS.md](MANUAL-INSUMOS.md). Instalação e validação: [IMPLANTACAO-INSUMOS.md](IMPLANTACAO-INSUMOS.md). Aplicar `insumos.sql` uma vez sobre a Fase 1; publicar `index.html`, `fdm.js` e `insumos.js` juntos. Não há lista obrigatória de ferragens pré-cadastradas. Cadastre os itens necessários, sem saldo nem preço presumidos.
 
 Antes de consumir ou encerrar novas impressões, informar contagem e custo reais. Saldo insuficiente bloqueia a baixa. A disponibilidade projetada desconta a necessidade dos pedidos abertos e pode indicar falta; não é uma reserva exclusiva. A produção de peças continua sendo apontada na tela Produção. Custo apurado acumula os consumos e despesas adicionais informadas; não representa lucro líquido. O custo unitário usado nos relatórios antigos só muda mediante aplicação explícita da previsão.
 

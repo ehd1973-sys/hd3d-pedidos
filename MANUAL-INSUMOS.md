@@ -4,7 +4,7 @@
 
 Insumos e estoque reúne filamentos, argolas, correntinhas, conjuntos prontos, embalagens e outros materiais. O cadastro antigo de filamentos fica integrado a essa tela. Impressoras e apontamentos continuam disponíveis.
 
-Argola, correntinha e conjunto argola + correntinha começam como cadastros distintos, sem saldo ou preço inventado. Crie variantes para tamanhos, cores ou fornecedores que precisam de estoque próprio.
+O catálogo é livre: cadastre qualquer insumo e suas variantes, sem depender de itens pré-definidos. Apenas os filamentos já existentes são integrados automaticamente. Nenhum cadastro novo recebe saldo ou preço inventado.
 
 ## Preparar o estoque
 
@@ -49,3 +49,11 @@ Usuários ativos consultam catálogo, saldo, composição e movimentos. Produç�
 O administrador pode exportar as 17 tabelas na tela Backup. A versão 2 preserva números e campos JSON como texto no arquivo para manter precisão decimal na recuperação. Use o conversor atualizado snapshot-para-sql.mjs, sem editar manualmente esses campos. Não use o importador da versão antiga. Arquivos binários, senhas e configuração integral do Supabase continuam separados.
 
 Para recuperar em destino vazio: restaurar estrutura original, fase1-estrutura-recuperacao.sql, fase1-fechamento.sql e insumos-estrutura-recuperacao.sql; depois gerar/aplicar o SQL da cópia com o conversor atualizado. Os usuários Auth devem ser recuperados por procedimento administrativo suportado. A recuperação local das tabelas foi testada; não substitui recuperação integral dos serviços gerenciados.
+
+## Cadastro livre durante a produção e correções
+
+Em Custo de produção, o administrador pode usar **Cadastrar novo insumo aqui**, informar código, nome, categoria e unidade e voltar ao lote sem perder as quantidades preenchidas. O novo item entra na lista de consumo. Informe seu estoque e custo reais antes da baixa. O consumo de um lote não exige composição previamente salva: selecione os itens usados e suas quantidades.
+
+Em Insumos e estoque, **Editar cadastro** corrige nome e código, com auditoria. A unidade não muda para preservar o significado de saldos e custos; se ela estiver errada, retire o cadastro e crie outro. **Excluir do catálogo** retira o item das novas escolhas de forma reversível, preservando registros e custos históricos. Itens com saldo físico, composição em pedido aberto ou impressão pendente precisam ser corrigidos antes. **Mostrar itens retirados do catálogo** permite localizar e restaurar o cadastro.
+
+Erro em consumo é corrigido por **Estornar lote** (ou estorno da impressão); erro de quantidade física é corrigido por **Contagem**, com motivo registrado. Retirar um cadastro não desfaz suas movimentações.
