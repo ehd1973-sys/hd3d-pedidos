@@ -1,0 +1,5 @@
+{
+  "perfis": [{"id":"22222222-2222-4222-8222-222222222222","email":"master@teste.invalid","nome":"Teste","master":true,"ativo":true,"editar":true,"excluir":true,"despesas":true,"ver_financeiro":true,"producao":true,"criado_em":"2026-11-05T12:00:00+00:00"}],
+  "pedidos": [{"id":"33333333-3333-4333-8333-333333333333","numero":1,"dados":{"cliente":"Cliente de teste","produto":"Peça de teste","status":"Aprovado","qtde":10},"criado_em":"2026-11-05T12:00:00+00:00","atualizado_em":"2026-11-05T12:00:00+00:00"}],
+  "despesas": [], "pedido_custos": [], "producao": []
+}

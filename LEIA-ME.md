@@ -37,8 +37,12 @@ Limites: não é teste de recuperação integral do projeto Supabase. Usuários 
 4. Testar com master, operador com Produção, leitor, financeiro e perfil inativo. Conferir recarregamento, falha, estorno, concorrência e largura de celular.
 5. Revisar e aprovar antes de aplicar migração e publicar no sistema em uso.
 
-Para repetir os testes locais: npm ci, node test.mjs, node ui-test.mjs. O teste usa dados.json em ../../outputs/HD3D_backup_2026-11-05; ajuste esse caminho se extrair em outra pasta. Não incluir os dados privados em Git ou em hospedagem pública.
+Para repetir os testes locais: npm ci, node test.mjs, node ui-test.mjs. Por padrão são usados apenas dados fictícios de fixture-teste.json. Para validar novamente a cópia privada, definir HD3D_TEST_BACKUP com o caminho de dados.json. Não incluir dados privados em Git ou em hospedagem pública.
+
+homologacao-base.sql reconstrói a base mínima existente com políticas e um pedido fictício em um projeto Supabase novo. Recusa instalação quando pedidos ou perfis já existem. Não substitui o dump completo do ambiente original nem inclui usuários Auth, arquivos ou função de borda usuarios.
+
+homologacao.html vem sem configuração de produção: solicita URL e chave pública do novo projeto. Não usar index.html para a primeira configuração do ambiente de testes. Cadastro de usuários Auth e vinculação dos perfis de teste devem ser feitos exclusivamente no ambiente separado.
 
 ## Situação do GitHub
 
-A criação de branch foi bloqueada pela revisão automática, que interpretou a ação remota como publicação dependente de aprovação. Nenhum branch ou PR foi criado. O pacote local permite revisar tudo antes de autorizar o envio da branch, sem publicar o site ou alterar o banco de produção.
+A branch evolucao/fase1-fdm-2026-11-05 foi criada pelo navegador e recebeu a versão inicial no commit c6a620c. As melhorias de homologação posteriores estão locais até o próximo envio. Nenhum PR foi criado, SQL de produção aplicado ou site publicado.

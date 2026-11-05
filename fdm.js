@@ -36,7 +36,7 @@ function fdmRender(){
   const p=pedidos.find(p=>p.id===i.pedido_id),e=FDM.equipamentos.find(e=>e.id===i.equipamento_id),m=FDM.materiais.find(m=>m.id===i.material_id);
   const dur=i.inicio_em&&i.fim_em?(Date.parse(i.fim_em)-Date.parse(i.inicio_em))/60000:null;
   const energia=P('ver_financeiro')&&e?.codigo==='IMP-001'&&m?.tipo==='PLA'&&dur!==null?`<br><small>Estimativa A1/PLA, 95 W: ${brl(dur/60*0.095*0.89)}. Referência provisória, não medida.</small>`:'';
-  return `<tr><td data-l="Pedido">${p?esc(numPed(p.numero)+' · '+p.cliente):'Pedido não encontrado'}</td><td data-l="Impressora / material">${esc(e?.codigo||'—')} / ${esc(m?.tipo||'—')}</td><td data-l="Status">${esc(fdmStatus[i.status])}</td><td data-l="Duração">${fdmMedido(dur,' min')}${energia}</td><td data-l="Massas">${fdmMedido(i.peso_peca_g,' g')} / ${fdmMedido(i.purga_g,' g')} / ${fdmMedido(i.desperdicio_g,' g')}</td><td data-l="Ações">${edit?i.fechado_em?(i.status!=='estornada'?`<button class="btn sm lt" onclick="fdmEstornar('${i.id}')">Estornar consumo</button>`:''):`<button class="btn sm" onclick="fdmAbrir('${i.id}')">Editar / encerrar</button>`:''}</td></tr>`;
+  return `<tr><td data-l="Pedido">${p?esc(numPed(p.numero)+' · '+p.cliente):'Pedido não encontrado'}</td><td data-l="Impressora / material">${esc(e?.codigo||'—')} / ${esc(m?.tipo||'—')}</td><td data-l="Status">${esc(fdmStatus[i.status])}</td><td data-l="Duração"><span>${fdmMedido(dur,' min')}${energia}</span></td><td data-l="Massas">${fdmMedido(i.peso_peca_g,' g')} / ${fdmMedido(i.purga_g,' g')} / ${fdmMedido(i.desperdicio_g,' g')}</td><td data-l="Ações">${edit?i.fechado_em?(i.status!=='estornada'?`<button class="btn sm lt" onclick="fdmEstornar('${i.id}')">Estornar consumo</button>`:''):`<button class="btn sm" onclick="fdmAbrir('${i.id}')">Editar / encerrar</button>`:''}</td></tr>`;
  }).join('')||'<tr><td colspan="6">Nenhuma impressão registrada.</td></tr>'}</tbody></table></div>`;
 }
 async function fdmEquipamento(id,status){try{if(!perfil?.master)return;ok(await sb.from('equipamentos').update({status}).eq('id',id));await fdmCarregar();}catch(e){falha(e,'atualizar impressora');await fdmCarregar();}}
@@ -67,4 +67,20 @@ async function fdmSalvar(e){
   await fdmCarregar();toast('Impressão salva');
  }catch(e){$('#fdmErro').textContent=traduz(e);}finally{FDM.busy=false;b.disabled=false;}
 }
-async function fdmEstornar(id){if(!P('producao')||FDM.busy||!confirm('Estornar o consumo desta impressão? O registro e a movimentação original serão preservados.'))return;FDM.busy=true;try{ok(await sb.rpc('fdm_estornar',{p_id:id}));await fdmCarregar();toast('Consumo estornado');}catch(e){falha(e,'estornar impressão');}finally{FDM.busy=false;}}
+function fdmEstornar(id){
+ if(!P('producao')||FDM.busy)return;
+ let d=document.querySelector('#fdmConfirmacao');
+ if(!d){d=document.createElement('dialog');d.id='fdmConfirmacao';d.setAttribute('aria-labelledby','fdmConfirmacaoTitulo');document.body.append(d);}
+ d.innerHTML='<div class="dbody"><h2 id="fdmConfirmacaoTitulo">Estornar consumo</h2><p>O registro de impressão e a movimentação original serão preservados. Uma entrada compensatória devolverá o consumo registrado.</p><p id="fdmEstornoErro" class="erro" role="alert"></p><button class="btn lt" type="button" id="fdmEstornoCancelar">Cancelar</button> <button class="btn bad" type="button" id="fdmEstornoConfirmar">Confirmar estorno</button></div>';
+ d.querySelector('#fdmEstornoCancelar').onclick=()=>d.close();
+ d.querySelector('#fdmEstornoConfirmar').onclick=()=>fdmConfirmarEstorno(id,d);
+ d.showModal();
+}
+async function fdmConfirmarEstorno(id,d){
+ if(!P('producao')||FDM.busy)return;FDM.busy=true;
+ const buttons=d.querySelectorAll('button');buttons.forEach(b=>b.disabled=true);
+ try{ok(await sb.rpc('fdm_estornar',{p_id:id}));d.close();await fdmCarregar();toast('Consumo estornado');}
+ catch(e){d.querySelector('#fdmEstornoErro').textContent=traduz(e);}
+ finally{FDM.busy=false;buttons.forEach(b=>b.disabled=false);}
+}
+
