@@ -1,7 +1,7 @@
 {
   "private": true,
   "scripts": {
-    "test": "node test.mjs && node ui-test.mjs && node homologacao-test.mjs && node snapshot-test.mjs"
+    "test": "node test.mjs && node ui-test.mjs && node homologacao-test.mjs && node snapshot-test.mjs && node insumos-test.mjs && node insumos-ui-test.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.15",

@@ -1,3 +1,16 @@
+# HD3D — Insumos, estoque e custos, versão 1.1
+
+Incremento validado em homologação; aguarda implantação no sistema em uso. Permite argolas e correntinhas avulsas, conjuntos prontos, filamentos, embalagens e outros insumos. Cada item tem unidade, contagem, compras, custo médio e histórico de consumo/estorno. A composição por peça calcula necessidade e custo previsto do pedido; os consumos preservam o custo da época.
+
+Operação: [MANUAL-INSUMOS.md](MANUAL-INSUMOS.md). Instalação e validação: [IMPLANTACAO-INSUMOS.md](IMPLANTACAO-INSUMOS.md). Aplicar `insumos.sql` uma vez sobre a Fase 1; publicar `index.html`, `fdm.js` e `insumos.js` juntos. Os cadastros iniciais de argola, correntinha e conjunto não recebem saldo nem preço presumidos.
+
+Antes de consumir ou encerrar novas impressões, informar contagem e custo reais. Saldo insuficiente bloqueia a baixa. A disponibilidade projetada desconta a necessidade dos pedidos abertos e pode indicar falta; não é uma reserva exclusiva. A produção de peças continua sendo apontada na tela Produção. Custo apurado acumula os consumos e despesas adicionais informadas; não representa lucro líquido. O custo unitário usado nos relatórios antigos só muda mediante aplicação explícita da previsão.
+
+`npm test` executa as validações antigas e novas, incluindo recuperação exata de 17 tabelas e proteção dos custos por perfil. A cópia exportada pela interface de homologação também foi recuperada e comparada. Dois acessos simultâneos ao mesmo saldo foram testados no Supabase: a segunda baixa excedente foi recusada. Os dados de homologação são fictícios e não devem ser copiados para produção.
+
+## Histórico da Fase 1
+
+O registro abaixo descreve a versão 1.0 publicada e seus limites naquela entrega; o incremento acima substitui as limitações de insumos, reposição, custos e saldo negativo para novos consumos.
 # HD3D — Fase 1, versão 1.0.0
 
 Impressoras, materiais e apontamento FDM por trabalho, vinculados aos pedidos existentes. A contagem de peças/logos continua na tela Produção. Instalada no projeto HD3D Pedidos e publicada em 05/11/2026 após autorização do responsável. Endereço: https://ehd1973-sys.github.io/hd3d-pedidos/ . Registro em `PUBLICACAO-FASE1.md`.
