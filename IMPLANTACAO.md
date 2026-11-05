@@ -1,6 +1,6 @@
 # Instalação da Fase 1
 
-Versão 1.0.0 validada em HD3D Homologacao. Produção não recebeu a migração ou publicação. A aprovação de implantação deve identificar o projeto HD3D Pedidos e esta revisão.
+Versão 1.0.0 instalada no projeto HD3D Pedidos e publicada em 05/11/2026, após autorização explícita do responsável. A sequência abaixo documenta a instalação já realizada. Não repetir a migração na origem. Resultado e verificação em `PUBLICACAO-FASE1.md`.
 
 ## Preparação
 

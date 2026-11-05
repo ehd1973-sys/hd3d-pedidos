@@ -1,6 +1,6 @@
 # Aceite técnico — Fase 1, v1.0.0
 
-Data: 05/11/2026. Estado: implementação e homologação concluídas; publicação em produção pendente de aprovação.
+Data: 05/11/2026. Estado: implementação, homologação, instalação e publicação em produção concluídas após aprovação explícita do responsável. Conferência posterior em `PUBLICACAO-FASE1.md`.
 
 | Critério da auditoria | Resultado |
 |---|---|
@@ -28,4 +28,4 @@ Data: 05/11/2026. Estado: implementação e homologação concluídas; publicaç
 
 Um material por trabalho; sem integração automática com quantidade, reposição auditável ou bloqueio por saldo; edição financeira administrativa; indicadores antigos mantidos. Os papéis foram testados no servidor, sem logins independentes de cada perfil na interface. Auth/senhas, anexos binários e configuração integral Supabase exigem procedimento próprio; sua recuperação integral não foi testada.
 
-A auditoria pede publicação após aprovação do responsável. Este aceite técnico não declara o sistema publicado.
+A aprovação final foi recebida e o PR #1 foi integrado em main no commit 1568bf8. Publicação GitHub Pages concluída; login existente, novas telas e exportação conferidos no endereço oficial. A cópia das dez tabelas baixada de produção foi recuperada localmente e as cinco tabelas antigas foram comparadas com o snapshot anterior à instalação, sem diferenças de conteúdo. Nenhum trabalho fictício foi criado em produção.

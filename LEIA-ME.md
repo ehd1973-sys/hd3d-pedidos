@@ -1,6 +1,6 @@
 # HD3D — Fase 1, versão 1.0.0
 
-Impressoras, materiais e apontamento FDM por trabalho, vinculados aos pedidos existentes. A contagem de peças/logos continua na tela Produção. Implementação concluída e validada em homologação; instalação no sistema em uso é uma etapa separada.
+Impressoras, materiais e apontamento FDM por trabalho, vinculados aos pedidos existentes. A contagem de peças/logos continua na tela Produção. Instalada no projeto HD3D Pedidos e publicada em 05/11/2026 após autorização do responsável. Endereço: https://ehd1973-sys.github.io/hd3d-pedidos/ . Registro em `PUBLICACAO-FASE1.md`.
 
 ## Entrega
 

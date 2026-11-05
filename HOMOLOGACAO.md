@@ -1,6 +1,6 @@
 # HD3D — Resultados da homologação da Fase 1
 
-Data: 05/11/2026. Projeto separado: HD3D Homologacao (bpvlryctabjhfiipckhj). Produção gfstmyfxkqivdkwcgqut não recebeu migrações nem publicação.
+Data: 05/11/2026. Projeto separado: HD3D Homologacao (bpvlryctabjhfiipckhj). Este relatório registra os testes anteriores à publicação. A instalação posterior em produção foi autorizada e concluída na mesma data; ver `PUBLICACAO-FASE1.md`.
 
 ## Verificado no Supabase e navegador
 
@@ -36,14 +36,14 @@ node homologacao-test.mjs: base nova, recusa de reinstalação, RLS das dez tabe
 - Datas e estados foram preservados, gatilho reativado e numeração conferida. Destino ocupado é recusado, sem sobrescrever dados.
 - Permissão de exportação verificada no Supabase: leitor, operador, financeiro e inativo recusados; master ativo exportou. Mudanças temporárias dos perfis foram revertidas.
 - Exportação original ampliada no pacote privado: estrutura detalhada, grants, funções SQL, sequência, metadados de Auth/Storage, função de borda e código original. Cinco tabelas originais recuperadas localmente e seis anexos íntegros. Senhas e configuração integral dos serviços não compõem esse pacote.
-- Correção separada de TRUNCATE testada localmente, mantendo SELECT; não aplicada à origem. Não foi demonstrada exploração pelo REST público.
+- Correção separada de TRUNCATE testada localmente, mantendo SELECT; posteriormente aplicada à origem na instalação autorizada. Não foi demonstrada exploração pelo REST público.
 - Novos testes: `node snapshot-test.mjs` e `node verificar-copia.mjs caminho-da-copia.json`.
 
-## Antes de produção
+## Condições e limites da implantação
 
 - Cobertura adicional opcional: telas e sessão HTTP de cada perfil com logins independentes. As regras de servidor já passaram no Supabase, e o fluxo de interface foi validado com master.
 - Recuperação integral de Auth, Storage e configurações dos serviços gerenciados não foi ensaiada; o teste de restauração é lógico, das tabelas. Esse limite é explícito no manual.
-- Revisar a versão consolidada e aprovar a instalação no sistema em uso. Gerar cópia atualizada antes da mudança.
+- Revisão consolidada aprovada pelo responsável. Cópia atualizada das cinco tabelas e seis anexos conferida antes da mudança; instalador exato validado localmente sobre essa cópia. Após a publicação, a cópia das dez tabelas baixada de produção foi recuperada e o conteúdo antigo foi comparado com o snapshot anterior, sem diferenças.
 
 ## Limitações de escopo
 
