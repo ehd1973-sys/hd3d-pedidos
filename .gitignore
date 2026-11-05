@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.*
+!.env.example
+homologacao-conectada.html
+HD3D-Fase1-*.json
+HD3D_backup*/
+dados.json
+recuperar.sql
+*.zip
+*.log
