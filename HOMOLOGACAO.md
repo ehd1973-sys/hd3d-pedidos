@@ -29,14 +29,24 @@ node ui-test.mjs: navegação, campos sem medidas fictícias, escape de texto e 
 
 node homologacao-test.mjs: base nova, recusa de reinstalação, RLS das dez tabelas e página de homologação sem configuração de produção.
 
-## Pendências antes de produção
+## Fechamento da versão 1.0.0
+
+- Complemento `fase1-fechamento.sql` instalado com sucesso na homologação.
+- Exportação pela interface com login real gerou JSON das dez tabelas. O arquivo baixado foi restaurado em banco local separado e comparado integralmente: 1 perfil, 1 pedido, 3 equipamentos, 3 materiais, 6 referências financeiras, 3 impressões e 6 movimentos. Despesas, custos de pedidos e produção estavam vazios nesse ambiente de testes.
+- Datas e estados foram preservados, gatilho reativado e numeração conferida. Destino ocupado é recusado, sem sobrescrever dados.
+- Permissão de exportação verificada no Supabase: leitor, operador, financeiro e inativo recusados; master ativo exportou. Mudanças temporárias dos perfis foram revertidas.
+- Exportação original ampliada no pacote privado: estrutura detalhada, grants, funções SQL, sequência, metadados de Auth/Storage, função de borda e código original. Cinco tabelas originais recuperadas localmente e seis anexos íntegros. Senhas e configuração integral dos serviços não compõem esse pacote.
+- Correção separada de TRUNCATE testada localmente, mantendo SELECT; não aplicada à origem. Não foi demonstrada exploração pelo REST público.
+- Novos testes: `node snapshot-test.mjs` e `node verificar-copia.mjs caminho-da-copia.json`.
+
+## Antes de produção
 
 - Cobertura adicional opcional: telas e sessão HTTP de cada perfil com logins independentes. As regras de servidor já passaram no Supabase, e o fluxo de interface foi validado com master.
-- Exportação integral do ambiente original e recuperação integral de Auth, funções de borda, gatilhos, grants e configurações continuam pendentes; a cópia das cinco tabelas e seis anexos foi validada separadamente.
-- Fazer revisão final e aprovar implantação. Estes testes não autorizam publicação.
+- Recuperação integral de Auth, Storage e configurações dos serviços gerenciados não foi ensaiada; o teste de restauração é lógico, das tabelas. Esse limite é explícito no manual.
+- Revisar a versão consolidada e aprovar a instalação no sistema em uso. Gerar cópia atualizada antes da mudança.
 
 ## Limitações de escopo
 
-Um material por trabalho. Sem reposição/ajuste auditável de estoque, formulário de custos, revisão dos indicadores financeiros antigos ou extensão do backup do aplicativo para as novas tabelas. O estoque conhecido não bloqueia consumo maior que o saldo. Não usar esta versão como backup integral nem como cálculo de lucro líquido.
+Um material por trabalho. Sem reposição/ajuste auditável de estoque, formulário de custos ou revisão dos indicadores financeiros antigos. O estoque conhecido não bloqueia consumo maior que o saldo. A nova exportação cobre as dez tabelas, mas não é backup integral dos serviços Supabase. Não usar esta fase como cálculo de lucro líquido.
 
 Os dados de teste permanecem exclusivamente em homologação e estão identificados como fictícios.

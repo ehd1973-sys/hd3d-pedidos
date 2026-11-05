@@ -1,48 +1,37 @@
-# HD3D — Fase 1 para revisão
+# HD3D — Fase 1, versão 1.0.0
 
-Versão local de desenvolvimento, 05/11/2026. Não instalada no Supabase nem publicada.
+Impressoras, materiais e apontamento FDM por trabalho, vinculados aos pedidos existentes. A contagem de peças/logos continua na tela Produção. Implementação concluída e validada em homologação; instalação no sistema em uso é uma etapa separada.
 
-## Conteúdo
+## Entrega
 
-- index.html: aplicação existente com carregamento de fdm.js.
-- fdm.js: telas Impressoras, Materiais e Impressões, vinculadas aos pedidos.
-- fase1.sql: migração aditiva para homologação.
-- rollback-fase1.sql: remoção do módulo novo; destrutiva para seus registros, nunca executada automaticamente.
-- test.mjs e ui-test.mjs: testes de restauração, regras do banco e interface.
-- restore-fixture.sql: reconstrução parcial da estrutura original para testes locais; não é dump completo do Supabase.
+- `index.html` e `fdm.js`: aplicação existente e novas telas.
+- `fase1.sql`: migração aditiva, permissões e referências iniciais; aplicar uma vez.
+- `fase1-fechamento.sql`: exportação das dez tabelas, exclusiva de master ativo; reexecutável.
+- `seguranca-corrigir-truncate.sql`: correção separada de permissão antiga, para revisão na implantação.
+- `MANUAL-FASE1.md`, `IMPLANTACAO.md`, `ACEITE-FASE1.md`, `HOMOLOGACAO.md`: operação, instalação, critérios e testes.
+- `snapshot-para-sql.mjs` e `fase1-estrutura-recuperacao.sql`: recuperação administrativa dos dados em destino vazio.
+- `rollback-fase1.sql`: remoção destrutiva do módulo; nunca executar automaticamente.
 
-## Regras implementadas
+## Regras
 
-Master cadastra impressoras e materiais e muda o estado das impressoras. Usuários ativos consultam o módulo; a permissão Produção permite apontar e encerrar impressões. Custos ficam em tabela separada protegida por RLS financeiro. Somente master pode alterar as referências financeiras no banco; sua edição ainda não tem formulário.
+Master cadastra impressoras/materiais e altera o estado das impressoras. Usuário ativo consulta; permissão Produção permite incluir, editar trabalhos abertos, encerrar e estornar. Custos ficam em tabela separada, restrita a financeiro/master. As regras são aplicadas no servidor.
 
-Encerramento registra uma saída de material em transação; repetição é idempotente. Estorno mantém a saída original e registra entrada compensatória uma única vez. Registros encerrados não podem ser editados pelos usuários. Estoque inicial ausente continua “Não medido”; o saldo conhecido não impede consumo maior que o estoque. Reposição e ajustes auditáveis serão uma etapa posterior.
+Encerramento registra uma saída em transação. Repetições e chamadas simultâneas não duplicam consumo. Estorno preserva a saída e cria entrada compensatória uma vez. Registros encerrados não são editáveis pelo usuário. Duração e massas desconhecidas aparecem como “Não medido”.
 
-A1 ativa; QIDI Q2 e Kobra X aguardando ativação. PLA/PETG/TPU são referências genéricas, sem cor, fabricante ou estoque inventados. Valores financeiros e vida útil de 48 meses vêm da auditoria; residual não definido. Cadastros novos não recebem custo ou estoque presumido.
+A1 ativa; QIDI Q2 e Kobra X aguardando ativação. PLA R$90/kg, PETG R$70/kg, TPU R$100/kg. Sem cor, fabricante, saldo ou histórico inventados. Aquisição e vida útil de 48 meses vêm da auditoria; residual não definido. Cadastros novos não recebem preços presumidos.
 
-Duração é calculada de início e término; tempo do fatiador é separado. Nenhum registro histórico foi criado. Energia só aparece como estimativa para IMP-001 com PLA e duração registrada, usando 95 W e R$0,89/kWh. Não representa medição nem custo líquido. Registros estornados permanecem na lista e ficam fora do total de horas por impressora.
+Energia aparece só como estimativa para IMP-001/PLA com duração registrada, a 95 W e R$0,89/kWh. Não representa medição ou lucro líquido. Estornos ficam fora do total de tempo por impressora.
 
-O módulo não lança peças/logos nem altera os cálculos financeiros antigos. Usa um material por trabalho; impressões com vários materiais exigem evolução do modelo antes do uso. Não usar apontamentos separados para simular múltiplos materiais se isso duplicar duração.
+## Validação
 
-## Validação realizada
+Passaram: recuperação das cinco tabelas antigas, integridade dos seis anexos, migração, validações, permissões, encerramento/estorno repetidos e simultâneos, preservação das quantidades, inclusão/edição/persistência pela interface e leitura em celular.
 
-Restauração dos dados das cinco tabelas em PostgreSQL embarcado PGlite, com comparação completa do conteúdo. Seis anexos conferidos por tamanho e MD5; SHA-256 registrado no pacote de backup. Testes de migração, massa negativa, impressora inativa, permissões, proteção dos custos, encerramento e estorno repetidos, proibição de movimento direto e preservação da contagem de produção. Testes da interface em DOM: navegação, formulário, medidas ausentes, escape de texto e validação antes de encerrar.
+A cópia das dez tabelas baixada pelo aplicativo de homologação foi restaurada localmente e comparada, incluindo três impressões e seis movimentos. Master exporta; leitor, operador, financeiro e inativo são recusados. Não inclui arquivos binários, senhas ou configuração integral do Supabase.
 
-Limites: não é teste de recuperação integral do projeto Supabase. Usuários Auth/senhas, gatilhos, grants originais, configurações e funções de borda ainda não foram exportados integralmente. Os testes locais usam uma estrutura reconstruída do inventário; faltam homologação real, persistência por recarregamento, teste concorrente em sessões separadas e inspeção visual em celular. Não há autorização de publicação nesta versão.
+Repetição local: `npm ci`, `node test.mjs`, `node ui-test.mjs`, `node homologacao-test.mjs`, `node snapshot-test.mjs`. Dados de teste do repositório são fictícios. Dependências de teste não são necessárias para executar o site.
 
-## Como homologar
+## Limites
 
-1. Criar ambiente separado compatível com o esquema e as funções existentes; manter as credenciais de produção fora dos testes.
-2. Aplicar fase1.sql nesse ambiente como proprietário postgres e conferir grants e políticas padrão. As funções e o gatilho foram testados com proprietário postgres.
-3. Servir index.html e fdm.js na mesma pasta por HTTP e conectar exclusivamente ao ambiente de homologação.
-4. Testar com master, operador com Produção, leitor, financeiro e perfil inativo. Conferir recarregamento, falha, estorno, concorrência e largura de celular.
-5. Revisar e aprovar antes de aplicar migração e publicar no sistema em uso.
+Um material por trabalho. Sem reposição/ajuste auditável de estoque, formulário de custos, conciliação automática com peças/logos ou revisão dos indicadores financeiros antigos. Estoque ausente permanece desconhecido; saldo conhecido pode ficar negativo. Recuperação integral de Auth, Storage e configurações não foi ensaiada; recuperação lógica das tabelas foi testada.
 
-Para repetir os testes locais: npm ci, node test.mjs, node ui-test.mjs. Por padrão são usados apenas dados fictícios de fixture-teste.json. Para validar novamente a cópia privada, definir HD3D_TEST_BACKUP com o caminho de dados.json. Não incluir dados privados em Git ou em hospedagem pública.
-
-homologacao-base.sql reconstrói a base mínima existente com políticas e um pedido fictício em um projeto Supabase novo. Recusa instalação quando pedidos ou perfis já existem. Não substitui o dump completo do ambiente original nem inclui usuários Auth, arquivos ou função de borda usuarios.
-
-homologacao.html vem sem configuração de produção: solicita URL e chave pública do novo projeto. Não usar index.html para a primeira configuração do ambiente de testes. Cadastro de usuários Auth e vinculação dos perfis de teste devem ser feitos exclusivamente no ambiente separado.
-
-## Situação do GitHub
-
-A branch evolucao/fase1-fdm-2026-11-05 foi criada pelo navegador e recebeu a versão inicial no commit c6a620c. As melhorias de homologação posteriores estão locais até o próximo envio. Nenhum PR foi criado, SQL de produção aplicado ou site publicado.
+PR: https://github.com/ehd1973-sys/hd3d-pedidos/pull/1 . Cópias privadas, dados de clientes e páginas configuradas para testes não fazem parte da entrega pública.

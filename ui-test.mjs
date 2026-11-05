@@ -11,6 +11,7 @@ FDM.equipamentos=[{id:'e',codigo:'IMP-001',nome:'Bambu A1',status:'ativa'}];
 FDM.materiais=[{id:'m',tipo:'PLA',cor:'',fabricante:'',ativo:true,estoque_inicial_g:null}];
 FDM.impressoes=[];FDM.movimentos=[];FDM.custos=[];
 fdmRender();fdmAbrir();
+function fdmTestConfig(p,s){perfil=p;sb=s;}
 `;
 w.eval(inline+'\n'+fs.readFileSync('fdm.js','utf8')+'\n'+fixture);
 assert.equal(w.document.querySelectorAll('nav button').length,8);
@@ -23,5 +24,18 @@ assert.equal(w.document.querySelector('#fdmFormulario teste'),null);
 f.elements.acao.value='concluida';
 await w.fdmSalvar({preventDefault(){},target:f});
 assert.match(w.document.querySelector('#fdmErro').textContent,/Meça/);
+// Cópia restrita e falha de rede sem produzir arquivo incompleto.
+w.fdmTestConfig({ativo:true,master:false},{rpc:()=>{throw Error('Exportação indevida');}});
+await w.fdmExportarSnapshot();
+assert.equal(w.document.querySelector('#fdmBackupStatus').textContent,'');
+w.fdmTestConfig({ativo:true,master:true},{rpc:async()=>({error:{message:'Failed to fetch'}})});
+await w.fdmExportarSnapshot();
+assert.match(w.document.querySelector('#fdmBackupStatus').textContent,/sem conexão/);
+assert.equal(w.document.querySelector('#fdmExportar').disabled,false);
+let downloaded=false;w.URL.createObjectURL=()=> 'blob:teste';w.URL.revokeObjectURL=()=>{};
+w.HTMLAnchorElement.prototype.click=function(){downloaded=this.download.startsWith('HD3D-Fase1-')};
+w.fdmTestConfig({ativo:true,master:true},{rpc:async()=>({data:{app:'HD3D-Fase1-snapshot',versao:1}})});
+await w.fdmExportarSnapshot();assert.equal(downloaded,true);
 console.log('Interface: navegação, cadastro, medidas ausentes, texto escapado e validação de encerramento: OK.');
+console.log('Cópia FDM: leitor recusado, erro de rede tratado e download do administrador: OK.');
 dom.window.close();

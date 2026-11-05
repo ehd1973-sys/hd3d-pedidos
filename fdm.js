@@ -4,6 +4,22 @@ const FDM={equipamentos:[],materiais:[],impressoes:[],movimentos:[],custos:[],ed
 const fdmStatus={planejada:'Planejada',imprimindo:'Imprimindo',concluida:'Concluída',falha:'Falha',cancelada:'Cancelada',estornada:'Estornada',ativa:'Ativa',aguardando:'Aguardando ativação',manutencao:'Manutenção',inativa:'Inativa'};
 const fdmMedido=(v,u='')=>v===null||v===undefined?'Não medido':`${Number(v).toLocaleString('pt-BR')}${u}`;
 const fdmOpc=(arr,label)=>arr.map(x=>`<option value="${esc(x.id)}">${esc(label(x))}</option>`).join('');
+// A cópia antiga continua disponível para compatibilidade. Esta inclui também o módulo FDM.
+const fdmBackupCard=document.createElement('div');fdmBackupCard.className='card';
+fdmBackupCard.innerHTML='<h3>Exportar dados da Fase 1</h3><p>Gera uma cópia das dez tabelas: pedidos, perfis, custos, despesas, produção, impressoras, materiais, impressões e movimentações. Somente o administrador pode exportar.</p><p>Os anexos e as senhas não estão no arquivo. Guarde-o em local privado; a recuperação é administrativa e não usa o importador da versão antiga.</p><button type="button" class="btn ok" id="fdmExportar">Exportar dados da Fase 1</button><p id="fdmBackupStatus" class="muted" role="status"></p>';
+document.querySelector('#v-backup').prepend(fdmBackupCard);
+fdmBackupCard.querySelector('button').onclick=fdmExportarSnapshot;
+async function fdmExportarSnapshot(){
+ if(!perfil?.ativo||!perfil?.master)return;
+ const b=$('#fdmExportar'),s=$('#fdmBackupStatus');if(b.disabled)return;b.disabled=true;s.textContent='Preparando cópia…';
+ try{
+  const data=ok(await sb.rpc('fdm_exportar_snapshot'));
+  if(data?.app!=='HD3D-Fase1-snapshot')throw Error('Resposta de exportação inválida.');
+  const url=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
+  const a=document.createElement('a');a.href=url;a.download=`HD3D-Fase1-${new Date().toISOString().replace(/[:.]/g,'-')}.json`;a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),5000);s.textContent='Cópia gerada. Confira o arquivo na pasta de downloads.';
+ }catch(e){s.textContent=traduz(e);}finally{b.disabled=false;}
+}
 for(const [v,t] of [['equipamentos','Impressoras'],['materiais','Materiais'],['impressoes','Impressões']]){
  const b=document.createElement('button');b.dataset.v=v;b.textContent=t;
  b.onclick=async()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('main section').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));await fdmCarregar();};
