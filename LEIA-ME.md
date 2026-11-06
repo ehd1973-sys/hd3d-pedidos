@@ -1,6 +1,6 @@
 # HD3D — Insumos, estoque e custos, versão 1.1
 
-Incremento validado em homologação; aguarda implantação no sistema em uso. Permite argolas e correntinhas avulsas, conjuntos prontos, filamentos, embalagens e outros insumos. Cada item tem unidade, contagem, compras, custo médio e histórico de consumo/estorno. A composição por peça calcula necessidade e custo previsto do pedido; os consumos preservam o custo da época.
+Incremento instalado e publicado no sistema em uso em 05/11/2026, após autorização do responsável. Registro em [PUBLICACAO-INSUMOS.md](PUBLICACAO-INSUMOS.md). Permite argolas e correntinhas avulsas, conjuntos prontos, filamentos, embalagens e outros insumos. Cada item tem unidade, contagem, compras, custo médio e histórico de consumo/estorno. A composição por peça calcula necessidade e custo previsto do pedido; os consumos preservam o custo da época.
 
 Operação: [MANUAL-INSUMOS.md](MANUAL-INSUMOS.md). Instalação e validação: [IMPLANTACAO-INSUMOS.md](IMPLANTACAO-INSUMOS.md). Aplicar `insumos.sql` uma vez sobre a Fase 1; publicar `index.html`, `fdm.js` e `insumos.js` juntos. Não há lista obrigatória de ferragens pré-cadastradas. Cadastre os itens necessários, sem saldo nem preço presumidos.
 
