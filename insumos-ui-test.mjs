@@ -1,0 +1,52 @@
+import {JSDOM} from 'jsdom';import fs from 'node:fs';import assert from 'node:assert/strict';
+const html=fs.readFileSync('index.html','utf8'),dom=new JSDOM(html,{runScripts:'outside-only',url:'https://teste.invalid/'}),w=dom.window;
+w.HTMLDialogElement.prototype.showModal=function(){this.setAttribute('open','');};w.HTMLDialogElement.prototype.close=function(){this.removeAttribute('open');};
+const inline=html.match(/<script>\s*([\s\S]*?)<\/script>/)[1].split('/* ---------- Início ---------- */')[0];
+w.eval(inline+'\n'+fs.readFileSync('fdm.js','utf8')+'\n'+fs.readFileSync('insumos.js','utf8')+`\n
+usuario={id:'u'};perfil={ativo:true,master:true};pedidos=[{id:'p',numero:1,cliente:'Cliente <teste>',qtde:10,status:'Aprovado'}];
+INS.pedido='p';INS.insumos=[{id:'a',codigo:'ARGOLA',nome:'Argola <img src=x>',categoria:'componente',unidade:'un',ativo:true,saldo:100,minimo:5,necessidade_aberta:10,disponivel_planejado:90,custo_medio:0.1,referencia:null}];
+INS.planos=[{pedido_id:'p',insumo_id:'a',quantidade_por_peca:1}];INS.usos=[];INS.movimentos=[];
+INS.custos=[{pedido_id:'p',planejado_insumos:1,previsto_total:1,extras_planejados:0,extras_reais:null,movimentos:0,legados_sem_custo:0}];
+insRender();function testPerfil(p){perfil=p;insRender();}
+function testSb(v){sb=v;}
+function testRetirados(mostrar){if(!INS.insumos.some(i=>i.id==='retirado'))INS.insumos.push({id:'retirado',codigo:'ERRO',nome:'Cadastro retirado',categoria:'outro',unidade:'un',ativo:false});INS.mostrarRetirados=mostrar;insRender();}
+`);
+assert.equal(w.document.querySelectorAll('nav button').length,10);
+assert.equal(w.document.querySelector('nav [data-v="materiais"]').hidden,true);
+assert.equal(w.document.querySelector('#v-insumos img'),null);
+assert.match(w.document.querySelector('#v-insumos').textContent,/100 un/);
+assert.equal(w.document.querySelector('#insLinhas input').value,'1');
+w.insLinha(w.document.querySelector('#insLinhas'));
+await w.insSalvarPlano({preventDefault(){},target:w.document.querySelector('#insComposicao')});
+assert.match(w.document.querySelector('#insPlanoErro').textContent,/quantidade positiva/);
+w.insEstoque('a','entrada');const form=w.document.querySelector('#insAcao form');
+assert.equal(form.elements.quantidade.step,'1');
+assert.match(form.textContent,/Valor total da compra/);
+await w.insSalvarEstoque({preventDefault(){},target:form},'a','entrada');
+assert.match(w.document.querySelector('#insAcaoErro').textContent,/use zero somente/);
+form.elements.quantidade.value='100';form.elements.valor.value='30';form.elements.observacoes.value='Compra teste';
+assert.equal(form.checkValidity(),true,'Compra de unidades inteiras deve ser aceita pelo formulário');
+w.insCadastro();assert.equal(w.document.querySelector('#insAcao [name="categoria"]').value,'componente');
+w.insEditar('a');assert.match(w.document.querySelector('#insAcao').textContent,/Corrigir cadastro/);
+assert.equal(w.document.querySelector('#insAcao [name="nome"]').value,'Argola <img src=x>');
+assert.equal(w.document.querySelector('#insAcao img'),null);
+const consumoAntes=w.document.querySelector('#insConsumoLinhas input');consumoAntes.value='7';
+w.testSb({rpc:async nome=>nome==='ins_cadastrar'?{data:'novo'}:{data:{insumos:[{id:'a',codigo:'ARGOLA',nome:'Argola',categoria:'componente',unidade:'un',ativo:true},{id:'novo',codigo:'COLA',nome:'Cola branca',categoria:'outro',unidade:'ml',ativo:true}]}}});
+w.insNovoNaProducao();const novo=w.document.querySelector('#insNovoDialogo form');
+novo.elements.codigo.value='COLA';novo.elements.nome.value='Cola branca';novo.elements.categoria.value='outro';novo.elements.unidade.value='ml';
+await w.insSalvarNovoNaProducao(novo);
+assert.equal(novo.querySelector('[role="alert"]').textContent,'');
+assert.equal(consumoAntes.value,'7','Cadastrar durante a produção preserva as quantidades já preenchidas');
+assert.equal(w.document.querySelector('#insConsumoLinhas [data-ins-linha]:last-child select').value,'novo');
+w.testRetirados(false);
+assert.doesNotMatch(w.document.querySelector('#v-insumos').textContent,/Cadastro retirado/);
+w.testRetirados(true);
+assert.match(w.document.querySelector('#v-insumos').textContent,/Restaurar cadastro/);
+assert.equal(w.document.querySelector('#insConsumoLinhas option[value="retirado"]'),null);
+w.testPerfil({ativo:true,producao:true,master:false,ver_financeiro:false});
+assert.equal(w.document.querySelector('#insCustos'),null);
+assert.doesNotMatch(w.document.querySelector('#v-insumos').textContent,/Médio:|Referência:/);
+assert.ok(w.document.querySelector('#insConsumo'));
+w.testPerfil({ativo:true,master:false});assert.equal(w.document.querySelector('#insConsumo'),null);
+console.log('Interface insumos: estoque, composição, proteção financeira, unidades, medidas vazias e escape de conteúdo: OK.');
+dom.window.close();
