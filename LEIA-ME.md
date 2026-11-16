@@ -1,3 +1,5 @@
+> Atualização de 16/11/2026: endereço principal https://hd3d.otimodespachante.com.br/. Consulte [MIGRACAO-VPS.md](MIGRACAO-VPS.md). As instruções anteriores de implantação são históricas.
+
 # HD3D — Insumos, estoque e custos, versão 1.1
 
 Incremento instalado e publicado no sistema em uso em 05/11/2026, após autorização do responsável. Registro em [PUBLICACAO-INSUMOS.md](PUBLICACAO-INSUMOS.md). Permite argolas e correntinhas avulsas, conjuntos prontos, filamentos, embalagens e outros insumos. Cada item tem unidade, contagem, compras, custo médio e histórico de consumo/estorno. A composição por peça calcula necessidade e custo previsto do pedido; os consumos preservam o custo da época.
