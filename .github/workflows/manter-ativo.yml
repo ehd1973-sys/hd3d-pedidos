@@ -1,47 +1,21 @@
-# Acessa o banco do Supabase a cada 3 dias para ele não pausar (plano gratuito pausa após 7 dias sem uso).
-# Se o acesso falhar, o GitHub envia um e-mail avisando.
-name: Manter banco ativo
+# Verifica disponibilidade; o HD3D usa a VPS e não depende da pausa do Supabase Free.
+name: Verificar HD3D na VPS
 
 on:
   schedule:
-    - cron: '17 12 */3 * *'   # a cada 3 dias, 09:17 (horário de Brasília)
-  workflow_dispatch:          # permite rodar manualmente pela aba Actions
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  manter-ativo:
+  verificar:
     runs-on: ubuntu-latest
     steps:
-      - name: Acessar o banco de dados
+      - name: Verificar site e autenticação por HTTPS
         env:
-          URL: https://gfstmyfxkqivdkwcgqut.supabase.co
-          KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmc3RteWZ4a3FpdmRrd2NncXV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2ODcyNDUsImV4cCI6MjEwODI2MzI0NX0.Cv91etqD0O0Y5tdH6KuQgGJd7bEr8lfFmGJTxkYM3DU
+          ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk0ODIzMDczLCJleHAiOjE5NTI1MDMwNzN9.RxDSpfgjQTVgy-HYcwyFXT4-Y43JINXpFyvAyE-76zU
         run: |
-          for tentativa in 1 2 3; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL/rest/v1/pedidos?select=id&limit=1" \
-                   -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
-            echo "Tentativa $tentativa: resposta $code"
-            if [ "$code" = "200" ]; then echo "Banco ativo."; exit 0; fi
-            sleep 30
-          done
-          echo "::error::O banco não respondeu. Ele pode ter sido pausado: entre em supabase.com e clique em Resume project."
-          exit 1
-
-      - uses: actions/checkout@v4
-
-      - name: Manter o agendamento do GitHub ativo
-        run: |
-          ultimo=$(git log -1 --format=%ct)
-          agora=$(date +%s)
-          dias=$(( (agora - ultimo) / 86400 ))
-          echo "Dias desde a última alteração do repositório: $dias"
-          if [ "$dias" -ge 45 ]; then
-            date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/ultimo-acesso.txt
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add .github/ultimo-acesso.txt
-            git commit -m "Mantém o agendamento ativo"
-            git push
-          fi
+          curl --fail --silent --show-error --retry 2 --max-time 30 --output /dev/null https://hd3d.otimodespachante.com.br/
+          curl --fail --silent --show-error --retry 2 --max-time 30 --output /dev/null -H "apikey: $ANON_KEY" https://api-hd3d.otimodespachante.com.br/auth/v1/health

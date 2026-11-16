@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>HD3D Pedidos</title>
+<link rel="canonical" href="https://hd3d.otimodespachante.com.br/">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
 :root{--bg:#f3f5f8;--card:#fff;--tx:#1d2433;--mut:#6b7385;--bd:#dde2ea;--pri:#1f3b73;--ac:#ff7a1a;--ok:#1a9b5c;--warn:#d98b00;--bad:#d23b3b;}
@@ -411,10 +413,8 @@ label.chk input{width:auto;margin:0}
    (Project Settings → API). A chave "anon/publishable" é pública,
    a segurança vem do login + regras do banco.
    ===================================================================== */
-const CONFIG = {
-  url:   'https://gfstmyfxkqivdkwcgqut.supabase.co',
-  chave: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdmc3RteWZ4a3FpdmRrd2NncXV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2ODcyNDUsImV4cCI6MjEwODI2MzI0NX0.Cv91etqD0O0Y5tdH6KuQgGJd7bEr8lfFmGJTxkYM3DU'
-};
+const CONFIG = {"url":"https://api-hd3d.otimodespachante.com.br","chave":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzk0ODIzMDczLCJleHAiOjE5NTI1MDMwNzN9.RxDSpfgjQTVgy-HYcwyFXT4-Y43JINXpFyvAyE-76zU"};
+if(location.hostname==="ehd1973-sys.github.io")location.replace("https://hd3d.otimodespachante.com.br/"+location.search+location.hash);
 
 const STATUS=['Orçamento','Aprovado','Imprimindo','Pronto','Entregue','Cancelado'];
 const NUM=['peso','tempo','custoUnit','valorUnit','qtde','frete','desconto','valorRecebido'];
